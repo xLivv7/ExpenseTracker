@@ -1,0 +1,49 @@
+﻿@model ExpenseTracker.Models.Expense
+
+@{
+    ViewData["Title"] = "Dodaj Wydatek";
+}
+
+<h2>Dodaj nowy wydatek</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Create" method="post">
+
+            <div class="form-group mb-3">
+                <label asp-for="Amount">Kwota (zł)</label>
+                <input asp-for="Amount" step="0.01" class="form-control" />
+                <span asp-validation-for="Amount" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Category">Kategoria</label>
+                <input asp-for="Category" class="form-control" placeholder="np. Jedzenie, Paliwo" />
+                <span asp-validation-for="Category" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Description">Opis</label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Date">Data</label>
+                <input asp-for="Date" type="date" class="form-control" />
+                <span asp-validation-for="Date" class="text-danger"></span>
+            </div>
+
+            <button type="submit" class="btn btn-success">Zapisz wydatek</button>
+            <a asp-action="Index" class="btn btn-secondary">Wróć do listy</a>
+
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
