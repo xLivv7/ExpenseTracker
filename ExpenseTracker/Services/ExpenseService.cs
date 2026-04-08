@@ -1,34 +1,48 @@
-﻿using ExpenseTracker.Models;
+﻿using ExpenseTracker.Data;
+using ExpenseTracker.Models;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace ExpenseTracker.Services
 {
     public class ExpenseService
     {
-        private readonly List<Expense> _expenses = new List<Expense>();
+        // Prywatna zmienna przechowująca dostęp do bazy danych
+        private readonly ApplicationDbContext _context;
 
-        public List<Expense> GetAllExpenses()
+        // Wsrzykniecie bazy
+        public ExpenseService(ApplicationDbContext context)
         {
-            return _expenses;
+            _context = context;
         }
 
+        // Pobieranie wszystkich wydatków z bayZ
+        public List<Expense> GetAllExpenses()
+        {
+            return _context.Expenses.ToList();
+        }
+
+        // Dodawanie nowego wydatku do bazy
         public void AddExpense(Expense expense)
         {
-            expense.Id = _expenses.Count > 0 ? _expenses.Max(e => e.Id) + 1 : 1;
-
+            // auto ID
             if (expense.Date == default)
             {
                 expense.Date = DateTime.Now;
             }
 
-            _expenses.Add(expense);
+            _context.Expenses.Add(expense); // Dodanie do ;kolejki'
+            _context.SaveChanges();         // Zapis w bazie
         }
 
+        // Usuwanie z bazy danych
         public bool DeleteExpense(int id)
         {
-            var expense = _expenses.FirstOrDefault(e => e.Id == id);
+            var expense = _context.Expenses.FirstOrDefault(e => e.Id == id);
             if (expense != null)
             {
-                _expenses.Remove(expense);
+                _context.Expenses.Remove(expense);
+                _context.SaveChanges();     
                 return true;
             }
             return false;
