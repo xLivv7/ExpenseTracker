@@ -1,22 +1,32 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using ExpenseTracker.Models;
 using ExpenseTracker.Services;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 
 namespace ExpenseTracker.Controllers
 {
+    [Authorize]
     public class ExpenseController : Controller
     {
         private readonly ExpenseService _expenseService;
+        private readonly UserManager<IdentityUser> _userManager;
 
-        public ExpenseController(ExpenseService expenseService)
+        // Wstrzykujemy UserManager
+        public ExpenseController(ExpenseService expenseService, UserManager<IdentityUser> userManager)
         {
             _expenseService = expenseService;
+            _userManager = userManager;
         }
 
         [HttpGet]
         public IActionResult Index()
         {
-            var data = _expenseService.GetAllExpenses();
+            // Pobieramy ID aktualnie zalogowanego użytkownika
+            var userId = _userManager.GetUserId(User);
+
+            // Przekazujemy to ID do serwisu
+            var data = _expenseService.GetAllExpenses(userId);
             return View(data);
         }
 
@@ -31,7 +41,8 @@ namespace ExpenseTracker.Controllers
         {
             if (ModelState.IsValid)
             {
-                _expenseService.AddExpense(newExpense);
+                var userId = _userManager.GetUserId(User);
+                _expenseService.AddExpense(newExpense, userId); // Przekazujemy ID!
                 return RedirectToAction("Index");
             }
             return View(newExpense);
@@ -40,12 +51,10 @@ namespace ExpenseTracker.Controllers
         [HttpDelete("Expense/Delete/{id}")]
         public IActionResult Delete(int id)
         {
-            bool deleted = _expenseService.DeleteExpense(id);
+            var userId = _userManager.GetUserId(User);
+            bool deleted = _expenseService.DeleteExpense(id, userId);
 
-            if (deleted)
-            {
-                return Ok();
-            }
+            if (deleted) return Ok();
             return NotFound();
         }
     }

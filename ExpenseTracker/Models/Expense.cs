@@ -19,5 +19,7 @@ namespace ExpenseTracker.Models
         [Required(ErrorMessage = "Data jest wymagana.")]
         [DataType(DataType.Date)]
         public DateTime Date { get; set; }
+        //Przechowuje unikalne ID użytkownika z systemu Identity. '?' zapobiega błędom jeśli są stare wydatki bez ownera
+        public string? UserId { get; set; }
     }
 }

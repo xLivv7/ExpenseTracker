@@ -17,32 +17,33 @@ namespace ExpenseTracker.Services
         }
 
         // Pobieranie wszystkich wydatków z bayZ
-        public List<Expense> GetAllExpenses()
+        public List<Expense> GetAllExpenses(string userId)
         {
-            return _context.Expenses.ToList();
+            return _context.Expenses.Where(e => e.UserId == userId).ToList();
         }
 
         // Dodawanie nowego wydatku do bazy
-        public void AddExpense(Expense expense)
+        public void AddExpense(Expense expense, string userId)
         {
-            // auto ID
+            expense.UserId = userId; // Przypisanie ID zalogowanego usera
+
             if (expense.Date == default)
             {
                 expense.Date = DateTime.Now;
             }
 
-            _context.Expenses.Add(expense); // Dodanie do ;kolejki'
-            _context.SaveChanges();         // Zapis w bazie
+            _context.Expenses.Add(expense);
+            _context.SaveChanges();
         }
 
         // Usuwanie z bazy danych
-        public bool DeleteExpense(int id)
+        public bool DeleteExpense(int id, string userId)
         {
-            var expense = _context.Expenses.FirstOrDefault(e => e.Id == id);
+            var expense = _context.Expenses.FirstOrDefault(e => e.Id == id && e.UserId == userId);
             if (expense != null)
             {
                 _context.Expenses.Remove(expense);
-                _context.SaveChanges();     
+                _context.SaveChanges();
                 return true;
             }
             return false;
