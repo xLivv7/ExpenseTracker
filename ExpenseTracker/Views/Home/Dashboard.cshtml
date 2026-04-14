@@ -1,0 +1,93 @@
+﻿@{
+    ViewData["Title"] = "Pulpit";
+}
+
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="fw-bold">Twój Pulpit</h2>
+            <p class="text-muted">Przegląd Twoich finansów w tym miesiącu.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Suma wydatków</h6>
+                    <h2 class="text-primary mb-0">@ViewBag.TotalSpent.ToString("C")</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Główna kategoria</h6>
+                    <h2 class="text-dark mb-0">@ViewBag.TopCategory</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                <div class="card-body">
+                    <h6 class="text-uppercase text-muted small fw-bold">Transakcje</h6>
+                    <h2 class="text-dark mb-0">@ViewBag.TransactionCount</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h5 class="fw-bold mb-4">Wydatki w ostatnich 7 dniach</h5>
+                <canvas id="weeklyChart"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h5 class="fw-bold mb-4">Podział kategorii</h5>
+                <canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Wykres Słupkowy
+        const ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
+        new Chart(ctxWeekly, {
+            type: 'bar',
+            data: {
+                labels: ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Ndz'],
+                datasets: [{
+                    label: 'Wydatki (zł)',
+                    data: [120, 45, 180, 90, 240, 310, 50],
+                    backgroundColor: '#4361EE',
+                    borderRadius: 8
+                }]
+            },
+            options: { responsive: true, plugins: { legend: { display: false } } }
+        });
+
+        // Wykres Kołowy 
+        const ctxCategory = document.getElementById('categoryChart').getContext('2d');
+        new Chart(ctxCategory, {
+            type: 'doughnut',
+            data: {
+                labels: ['Jedzenie', 'Paliwo', 'Dom', 'Rozrywka'],
+                datasets: [{
+                    data: [800, 450, 1000, 200],
+                    backgroundColor: ['#4361EE', '#3F37C9', '#4CC9F0', '#F72585']
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    </script>
+}
