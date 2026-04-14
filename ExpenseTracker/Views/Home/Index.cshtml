@@ -1,8 +1,106 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Strona Główna";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container mt-5">
+    <div class="row align-items-center py-5">
+        <div class="col-lg-6 mb-5 mb-lg-0">
+            <h1 class="display-3 fw-bold text-primary mb-3">Twoje finanse w jednym miejscu.</h1>
+            <p class="lead text-muted mb-4">
+                ExpenseTracker to proste narzędzie do śledzenia codziennych wydatków.
+                Zyskaj pełną kontrolę nad swoim budżetem dzięki przejrzystym statystykom i wykresom.
+            </p>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <a asp-controller="Home" asp-action="Dashboard" class="btn btn-primary btn-lg px-4 me-md-2 rounded-pill shadow-sm">
+                        Przejdź do Pulpitu
+                    </a>
+                    <a asp-controller="Expense" asp-action="Index" class="btn btn-outline-secondary btn-lg px-4 rounded-pill">
+                        Moje Wydatki
+                    </a>
+                }
+                else
+                {
+                    <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary btn-lg px-4 me-md-2 rounded-pill shadow-sm">
+                        Zacznij teraz
+                    </a>
+                    <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-outline-primary btn-lg px-4 rounded-pill">
+                        Zaloguj się
+                    </a>
+                }
+            </div>
+        </div>
+
+        <div class="col-lg-6 d-none d-lg-block">
+            <div class="position-relative" style="max-width: 420px; margin: 0 auto;">
+                <div class="position-absolute w-100 h-100 bg-primary bg-opacity-10 rounded-4" style="transform: rotate(4deg); top: 15px; right: -15px;"></div>
+
+                <div class="position-relative bg-white p-4 rounded-4 shadow border border-light">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-2">
+                        <h5 class="mb-0 fw-bold text-dark">Przykładowe wydatki</h5>
+                        <span class="badge bg-light text-secondary border">Podgląd</span>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="fs-3 me-3">🛒</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-dark">Zakupy spożywcze</div>
+                            <div class="small text-muted">Jedzenie</div>
+                        </div>
+                        <div class="fw-bold text-danger">- 145,20 zł</div>
+                    </div>
+
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="fs-3 me-3">⛽</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-dark">Stacja paliw</div>
+                            <div class="small text-muted">Transport</div>
+                        </div>
+                        <div class="fw-bold text-danger">- 250,00 zł</div>
+                    </div>
+
+                    <div class="d-flex align-items-center">
+                        <div class="fs-3 me-3">🎬</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold text-dark">Kino</div>
+                            <div class="small text-muted">Rozrywka</div>
+                        </div>
+                        <div class="fw-bold text-danger">- 65,00 zł</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 py-5 border-top">
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 bg-light bg-opacity-50">
+                <div class="card-body text-center p-4">
+                    <div class="display-5 mb-3">📊</div>
+                    <h5 class="fw-bold">Przejrzyste wykresy</h5>
+                    <p class="text-muted mb-0">Analizuj swoje wydatki na interaktywnych wykresach kołowych i słupkowych.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 bg-light bg-opacity-50">
+                <div class="card-body text-center p-4">
+                    <div class="display-5 mb-3">⚡</div>
+                    <h5 class="fw-bold">Szybkie wpisywanie</h5>
+                    <p class="text-muted mb-0">Dodawaj wydatki w kilka sekund, będąc w sklepie lub w domu.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 bg-light bg-opacity-50">
+                <div class="card-body text-center p-4">
+                    <div class="display-5 mb-3">🔒</div>
+                    <h5 class="fw-bold">Bezpieczne dane</h5>
+                    <p class="text-muted mb-0">Twoje wydatki są przypisane do Twojego konta i tylko Ty masz do nich wgląd.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
