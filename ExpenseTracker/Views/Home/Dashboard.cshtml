@@ -1,55 +1,68 @@
 ﻿@model ExpenseTracker.Models.DashboardViewModel
 
 @{
-    ViewData["Title"] = "Pulpit";
+    ViewData["Title"] = "Dashboard";
 }
 
-<div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="fw-bold">Twój Pulpit</h2>
-            <p class="text-muted">Przegląd Twoich finansów w tym miesiącu.</p>
+<div class="container-fluid mt-4">
+    <div class="row align-items-center mb-5">
+        <div class="col">
+            <h2 class="fw-bold mb-0">Dashboard</h2>
         </div>
-    </div>
-
-    <div class="row g-4 mb-5">
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
-                <div class="card-body">
-                    <h6 class="text-uppercase text-muted small fw-bold">Suma wydatków</h6>
-                    <h2 class="text-primary mb-0">@Model.TotalSpent.ToString("C")</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
-                <div class="card-body">
-                    <h6 class="text-uppercase text-muted small fw-bold">Główna kategoria</h6>
-                    <h2 class="text-dark mb-0">@Model.TopCategory</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
-                <div class="card-body">
-                    <h6 class="text-uppercase text-muted small fw-bold">Transakcje</h6>
-                    <h2 class="text-dark mb-0">@Model.TransactionCount</h2>
-                </div>
+        <div class="col-auto">
+            <div class="btn-group shadow-sm" role="group" aria-label="Wybór okresu">
+                <a asp-action="Dashboard" asp-route-period="week"
+                   class="btn btn-outline-primary px-4 @(Model.SelectedPeriod == "week" ? "active" : "")">Tydzień</a>
+                <a asp-action="Dashboard" asp-route-period="month"
+                   class="btn btn-outline-primary px-4 @(Model.SelectedPeriod == "month" ? "active" : "")">Miesiąc</a>
+                <a asp-action="Dashboard" asp-route-period="year"
+                   class="btn btn-outline-primary px-4 @(Model.SelectedPeriod == "year" ? "active" : "")">Rok</a>
             </div>
         </div>
     </div>
 
-    <div class="row g-4">
+    <div class="row justify-content-center g-4 mb-5">
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100 text-center">
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Suma wydatków</h6>
+                    <h3 class="text-primary fw-bold mb-0">@Model.TotalSpent.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100 text-center">
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Główna kategoria</h6>
+                    <h3 class="text-dark fw-bold mb-0">@Model.TopCategory</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100 text-center">
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-3">Transakcje</h6>
+                    <h3 class="text-dark fw-bold mb-0">@Model.TransactionCount</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <h5 class="fw-bold mb-4">Wydatki w ostatnich 7 dniach</h5>
-                <canvas id="weeklyChart"></canvas>
+                <h5 class="fw-bold mb-4">Historia wydatków</h5>
+                <div style="position: relative; height: 500px; width: auto;">
+                    <canvas id="mainChart"></canvas>
+                </div>
             </div>
         </div>
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
                 <h5 class="fw-bold mb-4">Podział kategorii</h5>
-                <canvas id="categoryChart"></canvas>
+                <div style="position: relative; height: 500px; width: auto;">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -58,38 +71,57 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Pobieramy dane z Modelu do JavaScript
-        const categoryLabels = @Html.Raw(Json.Serialize(Model.CategoryLabels));
-        const categoryData = @Html.Raw(Json.Serialize(Model.CategoryData));
+        // Dane przekazane z kontrolera
+        const mainLabels = @Html.Raw(Json.Serialize(Model.WeeklyLabels));
+        const mainData = @Html.Raw(Json.Serialize(Model.WeeklyData));
+        const catLabels = @Html.Raw(Json.Serialize(Model.CategoryLabels));
+        const catData = @Html.Raw(Json.Serialize(Model.CategoryData));
 
-        const weeklyLabels = @Html.Raw(Json.Serialize(Model.WeeklyLabels));
-        const weeklyData = @Html.Raw(Json.Serialize(Model.WeeklyData));
-
-        const ctxWeekly = document.getElementById('weeklyChart').getContext('2d');
-        new Chart(ctxWeekly, {
-            type: 'bar',
+        // Konfiguracja Wykresu Słupkowego/Liniowego
+        const ctxMain = document.getElementById('mainChart').getContext('2d');
+        new Chart(ctxMain, {
+            type: 'bar', // Możesz zmienić na 'line' dla roku, jeśli wolisz
             data: {
-                labels: weeklyLabels,
+                labels: mainLabels,
                 datasets: [{
                     label: 'Wydatki (zł)',
-                    data: weeklyData,
+                    data: mainData,
                     backgroundColor: '#4361EE',
-                    borderRadius: 8
+                    borderRadius: 6,
+                    borderWidth: 0
                 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { display: false } },
+                    x: { grid: { display: false } }
+                }
             }
         });
 
-        const ctxCategory = document.getElementById('categoryChart').getContext('2d');
-        new Chart(ctxCategory, {
+        // Konfiguracja Wykresu Kołowego
+        const ctxDoughnut = document.getElementById('doughnutChart').getContext('2d');
+        new Chart(ctxDoughnut, {
             type: 'doughnut',
             data: {
-                labels: categoryLabels,
+                labels: catLabels,
                 datasets: [{
-                    data: categoryData,
-                    backgroundColor: ['#4361EE', '#3F37C9', '#4CC9F0', '#F72585', '#7209B7']
+                    data: catData,
+                    backgroundColor: ['#4361EE', '#3F37C9', '#4CC9F0', '#F72585', '#7209B7', '#B5179E'],
+                    borderWidth: 2
                 }]
             },
-            options: { cutout: '70%' }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: { position: 'bottom', labels: { usePointStyle: true, padding: 20 } }
+                }
+            }
         });
     </script>
 }

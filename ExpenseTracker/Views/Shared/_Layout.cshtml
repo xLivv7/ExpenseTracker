@@ -21,17 +21,17 @@
 
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Strona Główna</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
                         @* Menu widoczne tylko dla zalogowanych użytkowników *@
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Dashboard">Pulpit</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Dashboard">Dashboard</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Expense" asp-action="Index">Moje Wydatki</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Expense" asp-action="Index">Expenses</a>
                             </li>
                         }
                     </ul>
@@ -41,7 +41,7 @@
             </div>
         </nav>
     </header>
-    <div class="container">
+    <div class="container-fluid px-4">
         <main role="main" class="pb-3">
             @RenderBody()
         </main>

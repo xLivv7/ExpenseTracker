@@ -4,6 +4,7 @@ namespace ExpenseTracker.Models
 {
     public class DashboardViewModel
     {
+        public string SelectedPeriod { get; set; } = "week";
         public decimal TotalSpent { get; set; }
         public string? TopCategory { get; set; }
         public int TransactionCount { get; set; }

@@ -25,49 +25,88 @@ namespace ExpenseTracker.Controllers
         }
 
         [Authorize]
-        public IActionResult Dashboard()
+        public IActionResult Dashboard(string period = "week") // Domyúlnie ≥aduje "week"
         {
-            //pobieranie wydatjow tylko dla danego usera
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var expenses = _context.Expenses.Where(e => e.UserId == userId).ToList();
+            var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var allExpenses = _context.Expenses.Where(e => e.UserId == currentUserId).ToList();
 
-            // Obs≥uga braku danych
-            if (expenses == null || !expenses.Any())
+            // Zabezpieczenie przed pustπ bazπ
+            if (allExpenses == null || !allExpenses.Any())
             {
-                return View(new DashboardViewModel());
+                return View(new DashboardViewModel { SelectedPeriod = period });
             }
 
-            //OgÛlne statystyki
+            DateTime startDate;
+            DateTime today = DateTime.Today;
+
+            // 1. Ustalenie daty poczπtkowej na podstawie wybranego okresu
+            switch (period.ToLower())
+            {
+                case "month":
+                    startDate = new DateTime(today.Year, today.Month, 1); // Pierwszy dzieÒ obecnego miesiπca
+                    break;
+                case "year":
+                    startDate = new DateTime(today.Year, 1, 1); // Pierwszy dzieÒ obecnego roku
+                    break;
+                case "week":
+                default:
+                    startDate = today.AddDays(-6); // Ostatnie 7 dni
+                    period = "week";
+                    break;
+            }
+
+            // 2. Filtrujemy wydatki TYLKO dla wybranego zakresu czasu
+            var expenses = allExpenses.Where(e => e.Date.Date >= startDate.Date && e.Date.Date <= today).ToList();
+
+            // 3. Statystyki ogÛlne (liczone tylko z przefiltrowanych wydatkÛw)
             var viewModel = new DashboardViewModel
             {
+                SelectedPeriod = period, // Zapisujemy, co wybra≥ uøytkownik
                 TotalSpent = expenses.Sum(e => e.Amount),
                 TransactionCount = expenses.Count,
-                TopCategory = expenses.GroupBy(e => e.Category) 
-                                      .OrderByDescending(g => g.Sum(e => e.Amount)) 
+                TopCategory = expenses.GroupBy(e => e.Category)
+                                      .OrderByDescending(g => g.Sum(e => e.Amount))
                                       .Select(g => g.Key)
                                       .FirstOrDefault() ?? "Brak"
             };
 
-            //Dane do wykresu ko≥owego (GroupBy category)
-            var categoryStats = expenses.GroupBy(e => e.Category) 
+            // 4. Dane do wykresu ko≥owego
+            var categoryStats = expenses.GroupBy(e => e.Category)
                                         .Select(g => new {
                                             Name = g.Key,
-                                            SumAmount = g.Sum(e => e.Amount) 
+                                            SumAmount = g.Sum(e => e.Amount)
                                         }).ToList();
 
             viewModel.CategoryLabels = categoryStats.Select(x => x.Name).ToList();
             viewModel.CategoryData = categoryStats.Select(x => x.SumAmount).ToList();
 
-            //Dane do wykresu s≥upkowego (Ostatnie 7 dni)
-            var today = DateTime.Today;
-            for (int i = 6; i >= 0; i--)
+            // 5. Dane do wykresu s≥upkowego - Zaleøne od okresu
+            if (period == "week")
             {
-                var date = today.AddDays(-i);
-                viewModel.WeeklyLabels.Add(date.ToString("dd.MM"));
-
-                //Sumujemy wydatki z konkretnego dnia
-                var daySum = expenses.Where(e => e.Date.Date == date.Date).Sum(e => e.Amount); 
-                viewModel.WeeklyData.Add(daySum);
+                for (int i = 6; i >= 0; i--)
+                {
+                    var date = today.AddDays(-i);
+                    viewModel.WeeklyLabels.Add(date.ToString("dd.MM"));
+                    viewModel.WeeklyData.Add(expenses.Where(e => e.Date.Date == date.Date).Sum(e => e.Amount));
+                }
+            }
+            else if (period == "month")
+            {
+                int daysInMonth = DateTime.DaysInMonth(today.Year, today.Month);
+                for (int i = 1; i <= daysInMonth; i++)
+                {
+                    viewModel.WeeklyLabels.Add($"{i:D2}"); // Dodaje dni jako 01, 02... 30
+                    viewModel.WeeklyData.Add(expenses.Where(e => e.Date.Day == i).Sum(e => e.Amount));
+                }
+            }
+            else if (period == "year")
+            {
+                string[] monthNames = { "Sty", "Lut", "Mar", "Kwi", "Maj", "Cze", "Lip", "Sie", "Wrz", "Paü", "Lis", "Gru" };
+                for (int i = 1; i <= 12; i++)
+                {
+                    viewModel.WeeklyLabels.Add(monthNames[i - 1]);
+                    viewModel.WeeklyData.Add(expenses.Where(e => e.Date.Month == i).Sum(e => e.Amount));
+                }
             }
 
             return View(viewModel);
