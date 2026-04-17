@@ -16,11 +16,27 @@
                 <input asp-for="Amount" step="0.01" class="form-control" />
                 <span asp-validation-for="Amount" class="text-danger"></span>
             </div>
-
             <div class="form-group mb-3">
                 <label asp-for="Category">Kategoria</label>
-                <input asp-for="Category" class="form-control" placeholder="np. Jedzenie, Paliwo" />
+                <select asp-for="Category" class="form-control" id="categorySelect">
+                    <option value="">-- Wybierz kategorię --</option>
+                    <option value="Zakupy spożywcze">Zakupy spożywcze</option>
+                    <option value="Transport">Transport</option>
+                    <option value="Chemia">Chemia</option>
+                    <option value="Media">Media</option>
+                    <option value="Rozrywka">Rozrywka</option>
+                    <option value="Zdrowie">Zdrowie</option>
+                    <option value="Kosmetyki">Kosmetyki</option>
+                </select>
                 <span asp-validation-for="Category" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="SubCategory">Podkategoria</label>
+                <select asp-for="SubCategory" class="form-control" id="subCategorySelect">
+                    <option value="">-- Najpierw wybierz kategorię --</option>
+                </select>
+                <span asp-validation-for="SubCategory" class="text-danger"></span>
             </div>
 
             <div class="form-group mb-3">
@@ -46,4 +62,37 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        // Słownik z podkategoriami
+        const subCategories = {
+            "Zakupy spożywcze": ["Mięso", "Nabiał", "Pieczywo", "Warzywa", "Słodycze i Przekąski", "Napoje", "Napoje energetyczne", "Produkty suche/sypkie", "Tłuszcze", "Dania Gotowe" ],
+            "Transport": ["Paliwo", "Bilety Komunikacji Miejskiej", "Taksówki/Uber", "Serwis Auta", "Ubezpieczenie Auta", "Przegląd","Bilety lotnicze", "Bilety PKP", "Nocleg"],
+            "Media": ["Czynsz", "Prąd", "Internet", "Woda", "Gaz", "Telefon"],
+            "Chemia": [],
+            "Rozrywka": [],
+            "Zdrowie":[],
+            "Kosmetyki": []
+        };
+
+        const categorySelect = document.getElementById('categorySelect');
+        const subCategorySelect = document.getElementById('subCategorySelect');
+
+        // Reakcja na zmianę kategorii
+        categorySelect.addEventListener('change', function() {
+            const selectedCategory = this.value;
+
+            // Czyszczenie obecnych podkategorii
+            subCategorySelect.innerHTML = '<option value="">-- Wybierz podkategorię --</option>';
+
+            // Jeśli wybrano kategorię, która ma podkategorie, dodaj je do listy
+            if (selectedCategory && subCategories[selectedCategory]) {
+                subCategories[selectedCategory].forEach(function(subCat) {
+                    const option = document.createElement('option');
+                    option.value = subCat;
+                    option.textContent = subCat;
+                    subCategorySelect.appendChild(option);
+                });
+            }
+        });
+    </script>
 }

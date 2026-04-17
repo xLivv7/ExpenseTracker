@@ -28,14 +28,14 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-// middleware
-app.UseHttpsRedirection();
-app.UseStaticFiles();
+// middleware wbudowany
+app.UseHttpsRedirection();//przekierowanie na bezpieczne po³¹czenie
+app.UseStaticFiles();//obrazki,css etc
 
-app.UseRouting();
+app.UseRouting();//przekierowywanie
 
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseAuthentication();//bezpieczenstwo
+app.UseAuthorization();//jak wyzej
 
 app.MapControllerRoute(
     name: "default",
