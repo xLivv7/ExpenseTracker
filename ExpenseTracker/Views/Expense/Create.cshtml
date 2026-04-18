@@ -27,6 +27,7 @@
                     <option value="Rozrywka">Rozrywka</option>
                     <option value="Zdrowie">Zdrowie</option>
                     <option value="Kosmetyki">Kosmetyki</option>
+                    <option value="Inne">Inne</option>
                 </select>
                 <span asp-validation-for="Category" class="text-danger"></span>
             </div>
@@ -68,10 +69,11 @@
             "Zakupy spożywcze": ["Mięso", "Nabiał", "Pieczywo", "Warzywa", "Słodycze i Przekąski", "Napoje", "Napoje energetyczne", "Produkty suche/sypkie", "Tłuszcze", "Dania Gotowe" ],
             "Transport": ["Paliwo", "Bilety Komunikacji Miejskiej", "Taksówki/Uber", "Serwis Auta", "Ubezpieczenie Auta", "Przegląd","Bilety lotnicze", "Bilety PKP", "Nocleg"],
             "Media": ["Czynsz", "Prąd", "Internet", "Woda", "Gaz", "Telefon"],
-            "Chemia": [],
-            "Rozrywka": [],
-            "Zdrowie":[],
-            "Kosmetyki": []
+            "Chemia": ["Środki czystości"],
+            "Rozrywka": ["Gry", "Serwisy Streamingowe", "Wyjścia"],
+            "Zdrowie":["Lekarze", "Leki", "Suplementy", "Sport"],
+            "Kosmetyki": ["Do Twarzy", "Do Ciała", "Do Włosów", "Makijaż"],
+            "Inne": []
         };
 
         const categorySelect = document.getElementById('categorySelect');
