@@ -1,61 +1,73 @@
 ﻿@model IEnumerable<ExpenseTracker.Models.Expense>
 
 @{
-    ViewData["Title"] = "Lista Wydatków";
+    ViewData["Title"] = "Expenses";
 }
 
-<div class="text-center mb-4">
-    <h1 class="display-4">Moje Wydatki</h1>
+<div class="row justify-content-center mt-4 mb-5">
+    <div class="col-12 col-xxl-10">
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold mb-0 display-6">Expenses</h2>
+            <a asp-action="Create" class="btn btn-primary btn-lg rounded-pill px-4 shadow-sm">
+                + Dodaj nowy wydatek
+            </a>
+        </div>
+
+        <div class="card shadow-sm border-0 rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle fs-5">
+                    <thead class="table-light text-muted">
+                        <tr>
+                            <th class="ps-4 fw-semibold border-0 py-4">Data</th>
+                            <th class="fw-semibold border-0 py-4">Kategoria</th>
+                            <th class="fw-semibold border-0 py-4">Podkategoria</th>
+                            <th class="fw-semibold border-0 py-4">Opis</th>
+                            <th class="text-end fw-semibold border-0 py-4">Kwota</th>
+                            <th class="text-center pe-4 fw-semibold border-0 py-4">Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody class="border-top-0">
+                        @if (!Model.Any())
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    Brak wydatków. Dodaj swój pierwszy wydatek!
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4 py-4 text-secondary">@item.Date.ToShortDateString()</td>
+                                    <td class="py-4">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fs-6">
+                                            @item.Category
+                                        </span>
+                                    </td>
+                                    <td class="py-4 text-muted">
+                                        @item.SubCategory
+                                    </td>
+                                    <td class="text-muted py-4">@item.Description</td>
+                                    <td class="text-end fw-bold text-dark py-4 fs-4">
+                                        @item.Amount.ToString("C")
+                                    </td>
+                                    <td class="text-center pe-4 py-4">
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Czy na pewno chcesz usunąć ten wydatek?');">
+                                            <button type="submit" class="btn btn-outline-danger border-0 rounded-pill px-4">
+                                                Usuń
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
 </div>
-
-<a href="/Expense/Create" class="btn btn-primary mb-3">Dodaj nowy wydatek</a>
-
-<table class="table table-striped table-bordered">
-    <thead class="table-dark">
-        <tr>
-            <th>ID</th>
-            <th>Data</th>
-            <th>Kategoria</th>
-            <th>Opis</th>
-            <th>Kwota</th>
-            <th>Akcje</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Id</td>
-                <td>@item.Date.ToShortDateString()</td>
-                <td>@item.Category</td>
-                <td>@item.Description</td>
-                <td>@item.Amount zł</td>
-                <td>
-                    <button onclick="deleteExpense(@item.Id)" class="btn btn-danger btn-sm">Usuń</button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-@section Scripts {
-    <script>
-        function deleteExpense(id) {
-            // Wbudowane w przeglądarkę okienko potwierdzenia usuwania
-            if (confirm("Czy na pewno chcesz usunąć ten wydatek?")) {
-
-                // Fetch API wysyła żądanie o typie DELETE do naszego kontrolera
-                fetch(`/Expense/Delete/${id}`, {
-                    method: 'DELETE'
-                })
-                .then(response => {
-                    if (response.ok) {
-                        // Jeśli kontroler zwrócił "Ok()", odświeżamy stronę, by pokazać aktualną tabelę
-                        window.location.reload();
-                    } else {
-                        alert("Wystąpił błąd podczas usuwania.");
-                    }
-                });
-            }
-        }
-    </script>
-}

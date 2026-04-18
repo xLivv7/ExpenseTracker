@@ -48,13 +48,19 @@ namespace ExpenseTracker.Controllers
             return View(newExpense);
         }
 
-        [HttpDelete("Expense/Delete/{id}")]
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
         public IActionResult Delete(int id)
         {
             var userId = _userManager.GetUserId(User);
+
             bool deleted = _expenseService.DeleteExpense(id, userId);
 
-            if (deleted) return Ok();
+            if (deleted)
+            {
+                return RedirectToAction(nameof(Index));
+            }
+
             return NotFound();
         }
     }
