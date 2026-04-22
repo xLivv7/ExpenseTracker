@@ -55,6 +55,9 @@
                                         @item.Amount.ToString("C")
                                     </td>
                                     <td class="text-center pe-4 py-4">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-outline-primary border-0 rounded-pill px-4">
+                                            Edytuj
+                                        </a>
                                         <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Czy na pewno chcesz usunąć ten wydatek?');">
                                             <button type="submit" class="btn btn-outline-danger border-0 rounded-pill px-4">
                                                 Usuń

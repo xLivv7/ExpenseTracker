@@ -48,5 +48,33 @@ namespace ExpenseTracker.Services
             }
             return false;
         }
+
+        // Pobieranie pojedynczego wydatku (potrzebne do załadowania formularza edycji)
+        public Expense GetExpenseById(int id, string userId)
+        {
+            return _context.Expenses.FirstOrDefault(e => e.Id == id && e.UserId == userId);
+        }
+
+        // Aktualizacja istniejącego wydatku w bazie
+        public bool UpdateExpense(Expense updatedExpense, string userId)
+        {
+            // Szukamy oryginalnego wydatku w bazie
+            var existingExpense = _context.Expenses.FirstOrDefault(e => e.Id == updatedExpense.Id && e.UserId == userId);
+
+            if (existingExpense != null)
+            {
+                // Aktualizujemy tylko dozwolone pola
+                existingExpense.Amount = updatedExpense.Amount;
+                existingExpense.Category = updatedExpense.Category;
+                existingExpense.SubCategory = updatedExpense.SubCategory;
+                existingExpense.Description = updatedExpense.Description;
+                existingExpense.Date = updatedExpense.Date;
+
+                _context.SaveChanges();
+                return true;
+            }
+
+            return false;
+        }
     }
 }

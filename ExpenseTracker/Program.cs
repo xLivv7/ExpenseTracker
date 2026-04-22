@@ -29,7 +29,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 // middleware wbudowany
-app.UseHttpsRedirection();//przekierowanie na bezpieczne po³¹czenie
+app.UseHttpsRedirection();//przekierowanie na bezpieczne poï¿½ï¿½czenie
 app.UseStaticFiles();//obrazki,css etc
 
 app.UseRouting();//przekierowywanie

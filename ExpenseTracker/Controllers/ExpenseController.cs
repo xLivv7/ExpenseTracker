@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ExpenseTracker.Models;
+﻿using ExpenseTracker.Models;
 using ExpenseTracker.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace ExpenseTracker.Controllers
 {
@@ -63,5 +64,54 @@ namespace ExpenseTracker.Controllers
 
             return NotFound();
         }
+
+        [HttpGet]
+        public IActionResult Edit(int? id)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+
+            var currentUserId = _userManager.GetUserId(User);
+
+            var expense = _expenseService.GetExpenseById(id.Value, currentUserId);
+
+            if (expense == null)
+            {
+                return NotFound();
+            }
+
+            return View(expense);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult Edit(int id, [Bind("Id,Amount,Category,Subcategory,Description,Date")] Expense expense)
+        {
+            if (id != expense.Id)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                var currentUserId = _userManager.GetUserId(User);
+
+                bool isUpdated = _expenseService.UpdateExpense(expense, currentUserId);
+
+                if (isUpdated)
+                {
+                    return RedirectToAction(nameof(Index)); 
+                }
+                else
+                {
+                    return NotFound(); 
+                }
+            }
+
+            return View(expense);
+        }
+
     }
 }
