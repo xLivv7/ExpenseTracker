@@ -1,64 +1,62 @@
 ﻿@model ExpenseTracker.Models.Expense
 
 @{
-    ViewData["Title"] = "Dodaj Wydatek";
+    ViewData["Title"] = "Dodaj wydatek";
 }
 
-<h2>Dodaj nowy wydatek</h2>
-<hr />
+<div class="row justify-content-center mt-4 mb-5">
+    <div class="col-md-8 col-lg-6">
 
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create" method="post">
+        <div class="text-center mb-4">
+            <h2 class="fw-bold display-6">Nowy wydatek</h2>
+            <p class="text-muted">Wprowadź szczegóły swojej transakcji poniżej.</p>
+        </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Amount">Kwota (zł)</label>
-                <input asp-for="Amount" step="0.01" class="form-control" />
-                <span asp-validation-for="Amount" class="text-danger"></span>
-            </div>
-            <div class="form-group mb-3">
-                <label asp-for="Category">Kategoria</label>
-                <select asp-for="Category" class="form-control" id="categorySelect">
-                    <option value="">-- Wybierz kategorię --</option>
-                    <option value="Zakupy spożywcze">Zakupy spożywcze</option>
-                    <option value="Transport">Transport</option>
-                    <option value="Chemia">Chemia</option>
-                    <option value="Media">Media</option>
-                    <option value="Rozrywka">Rozrywka</option>
-                    <option value="Zdrowie">Zdrowie</option>
-                    <option value="Kosmetyki">Kosmetyki</option>
-                    <option value="Inne">Inne</option>
-                </select>
-                <span asp-validation-for="Category" class="text-danger"></span>
-            </div>
+        <div class="card shadow-sm border-0 rounded-4 p-4 p-md-5 bg-white">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-            <div class="form-group mb-3">
-                <label asp-for="SubCategory">Podkategoria</label>
-                <select asp-for="SubCategory" class="form-control" id="subCategorySelect">
-                    <option value="">-- Najpierw wybierz kategorię --</option>
-                </select>
-                <span asp-validation-for="SubCategory" class="text-danger"></span>
-            </div>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label asp-for="Date" class="form-label fw-semibold text-muted">Data transakcji</label>
+                        <input asp-for="Date" type="date" class="form-control form-control-lg rounded-3 bg-light border-0" value="@DateTime.Now.ToString("yyyy-MM-dd")" />
+                        <span asp-validation-for="Date" class="text-danger small"></span>
+                    </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Description">Opis</label>
-                <input asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
-            </div>
+                    <div class="col-md-6">
+                        <label asp-for="Amount" class="form-label fw-semibold text-muted">Kwota (zł)</label>
+                        <input asp-for="Amount" type="number" step="0.01" class="form-control form-control-lg rounded-3 bg-light border-0" placeholder="0,00" />
+                        <span asp-validation-for="Amount" class="text-danger small"></span>
+                    </div>
 
-            <div class="form-group mb-3">
-                <label asp-for="Date">Data</label>
-                <input asp-for="Date" type="date" class="form-control" />
-                <span asp-validation-for="Date" class="text-danger"></span>
-            </div>
+                    <div class="col-md-6">
+                        <label asp-for="Category" class="form-label fw-semibold text-muted">Kategoria</label>
+                        <input asp-for="Category" class="form-control form-control-lg rounded-3 bg-light border-0" placeholder="np. Jedzenie, Rozrywka" />
+                        <span asp-validation-for="Category" class="text-danger small"></span>
+                    </div>
 
-            <button type="submit" class="btn btn-success">Zapisz wydatek</button>
-            <a asp-action="Index" class="btn btn-secondary">Wróć do listy</a>
+                    <div class="col-md-6">
+                        <label asp-for="SubCategory" class="form-label fw-semibold text-muted">Podkategoria</label>
+                        <input asp-for="SubCategory" class="form-control form-control-lg rounded-3 bg-light border-0" placeholder="np. Nabiał, Kino" />
+                        <span asp-validation-for="SubCategory" class="text-danger small"></span>
+                    </div>
 
-        </form>
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label fw-semibold text-muted">Opis (opcjonalnie)</label>
+                        <textarea asp-for="Description" class="form-control form-control-lg rounded-3 bg-light border-0" rows="3" placeholder="Gdzie i na co poszły pieniądze?"></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12 mt-5 d-flex gap-3">
+                        <a asp-action="Index" class="btn btn-light btn-lg rounded-pill px-4 flex-grow-1 text-muted">Anuluj</a>
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill px-4 flex-grow-1 shadow-sm">Dodaj wydatek</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+
     </div>
 </div>
-
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
