@@ -16,6 +16,8 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
     .AddEntityFrameworkStores<ApplicationDbContext>();
 
+builder.Services.AddScoped<IReceiptScannerService, ReceiptScannerService>();
+
 //singleton -> scoped po EF
 builder.Services.AddScoped<ExpenseService>();
 
