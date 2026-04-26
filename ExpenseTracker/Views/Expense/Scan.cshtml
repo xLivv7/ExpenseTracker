@@ -1,0 +1,37 @@
+﻿@model ExpenseTracker.Models.Expense
+
+@{
+    ViewData["Title"] = "Skanuj paragon";
+}
+
+<div class="container mt-4">
+    <h2>Skanuj paragon za pomocą AI</h2>
+    <p class="text-muted">Wgraj zdjęcie, a my uzupełnimy dane za Ciebie.</p>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <form asp-action="UploadReceipt" method="post" enctype="multipart/form-data" id="uploadForm">
+                <div class="mb-3">
+                    <label class="form-label">Wybierz zdjęcie lub zrób je aparatem:</label>
+                    <input type="file" name="receiptFile" class="form-control" accept="image/*" capture="environment" required id="fileInput" />
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                    <span id="btnText">Wyślij do analizy</span>
+                    <span id="spinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Prosty skrypt, który pokazuje kręcące się kółko (loader), bo AI potrzebuje kilku sekund
+        document.getElementById('uploadForm').onsubmit = function() {
+            document.getElementById('btnText').innerText = "Analizowanie przez AI...";
+            document.getElementById('spinner').classList.remove('d-none');
+            document.getElementById('submitBtn').disabled = true;
+        };
+    </script>
+}
