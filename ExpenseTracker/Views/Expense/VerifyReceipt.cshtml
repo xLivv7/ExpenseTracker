@@ -1,0 +1,70 @@
+﻿@model ExpenseTracker.Models.VerifyReceiptViewModel
+
+@{
+    ViewData["Title"] = "Weryfikacja paragonu";
+}
+
+<div class="container mt-4 mb-5">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i> @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0 rounded-4 p-4 mb-5 bg-primary text-white text-center">
+        <h4 class="text-white-50">Sklep: @Model.MerchantName</h4>
+        <h1 class="display-5 fw-bold mb-0">Cały paragon wyniósł @Model.TotalAmount.ToString("C")</h1>
+        <p class="mb-0 mt-2 fs-5">Data transakcji: @Model.Date.ToString("dd.MM.yyyy")</p>
+    </div>
+
+    <form asp-action="SaveVerifiedReceipt" method="post">
+
+        <h3 class="fw-bold mb-4">Podział na podkategorie:</h3>
+
+        <div class="row g-4">
+            @for (int i = 0; i < Model.ExpensesToSave.Count; i++)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card shadow-sm border-0 rounded-4 p-3 h-100 bg-light">
+
+                        <input type="hidden" asp-for="ExpensesToSave[i].Date" />
+
+                        <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                            <span class="badge bg-secondary fs-6">Wydatek @(i + 1)</span>
+                            <div class="d-flex align-items-center gap-1">
+                                <input asp-for="ExpensesToSave[i].Amount" class="form-control form-control-lg text-end fw-bold text-primary px-1 py-0" style="width: 100px; border:none; background:transparent;" />
+                                <span class="fw-bold fs-5 text-muted">zł</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold">Kategoria</label>
+                            <input asp-for="ExpensesToSave[i].Category" class="form-control rounded-3" />
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="small text-muted fw-bold">Podkategoria</label>
+                            <input asp-for="ExpensesToSave[i].SubCategory" class="form-control rounded-3" />
+                        </div>
+
+                        <div class="mb-2 mt-auto">
+                            <label class="small text-muted fw-bold">Wykryte produkty</label>
+                            <textarea asp-for="ExpensesToSave[i].Description" class="form-control rounded-3" rows="2"></textarea>
+                        </div>
+
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="d-flex gap-3 mt-5 justify-content-center">
+            <a asp-action="Scan" class="btn btn-light btn-lg rounded-pill px-5 text-muted shadow-sm">Skanuj ponownie</a>
+            <button type="submit" class="btn btn-success btn-lg rounded-pill px-5 shadow-sm fw-bold">
+                Zapisz wszystkie wydatki
+            </button>
+        </div>
+    </form>
+</div>

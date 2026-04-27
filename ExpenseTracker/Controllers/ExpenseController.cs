@@ -98,11 +98,11 @@ namespace ExpenseTracker.Controllers
 
                 if (isUpdated)
                 {
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToAction(nameof(Index)); 
                 }
                 else
                 {
-                    return NotFound();
+                    return NotFound(); 
                 }
             }
 
@@ -120,38 +120,82 @@ namespace ExpenseTracker.Controllers
         [HttpPost]
         public async Task<IActionResult> UploadReceipt(IFormFile receiptFile)
         {
-            // 1. Walidacja, czy przesłano plik
             if (receiptFile == null || receiptFile.Length == 0)
             {
                 ModelState.AddModelError("", "Proszę wybrać plik obrazu.");
                 return View("Scan");
             }
 
-            // 2. Wysłanie do AI
             using var stream = receiptFile.OpenReadStream();
             var scannedDto = await _receiptScannerService.ScanReceiptAsync(stream);
 
-            // 3. Obsługa przypadku, gdy AI nie odczyta danych
             if (scannedDto == null)
             {
                 TempData["ErrorMessage"] = "Nie udało się odczytać paragonu. Wpisz dane ręcznie.";
                 return RedirectToAction("Create");
             }
 
-            // 4. Mapowanie danych z DTO na Twój model Expense
-            var expense = new Expense
+            // TWORZYMY NASZ NOWY WIDOK Z WERYFIKACJĄ WIELU WYDATKÓW
+            var viewModel = new VerifyReceiptViewModel
             {
-                Amount = scannedDto.TotalAmount ?? 0,
+                MerchantName = scannedDto.MerchantName ?? "Nieznany sklep",
+                TotalAmount = scannedDto.TotalAmount ?? 0,
                 Date = scannedDto.TransactionDate ?? DateTime.Today,
-                Category = scannedDto.Category ?? "", // Jeśli puste, pole w widoku będzie puste i walidacja wymusi na użytkowniku wybór
-                SubCategory = scannedDto.SubCategory,
-                Description = scannedDto.Description ?? "Skan paragonu"
+                ExpensesToSave = new List<Expense>()
             };
 
-            TempData["SuccessMessage"] = "Paragon odczytany pomyślnie! Zweryfikuj i zapisz dane.";
+            // Przerabiamy pogrupowane podkategorie z AI na listę wydatków
+            if (scannedDto.SubCategories != null && scannedDto.SubCategories.Any())
+            {
+                foreach (var subCategory in scannedDto.SubCategories)
+                {
+                    viewModel.ExpensesToSave.Add(new Expense
+                    {
+                        Amount = subCategory.Amount,
+                        Date = scannedDto.TransactionDate ?? DateTime.Today,
+                        Category = subCategory.Category,
+                        SubCategory = subCategory.SubCategory,
+                        // AI wrzuca w itemNames np. ["Mleko", "Ser"], łączymy to po przecinku:
+                        Description = string.Join(", ", subCategory.ItemNames)
+                    });
+                }
+            }
+            else
+            {
+                // Fallback: Jeśli AI nie znajdzie listy produktów, dodajemy po prostu cały paragon jako jeden wydatek
+                viewModel.ExpensesToSave.Add(new Expense
+                {
+                    Amount = scannedDto.TotalAmount ?? 0,
+                    Date = scannedDto.TransactionDate ?? DateTime.Today,
+                    Category = scannedDto.Category ?? "Inne",
+                    Description = $"Zakupy: {scannedDto.MerchantName}"
+                });
+            }
 
-            // Zwracamy widok "Create", podając mu wypełniony obiekt Expense
-            return View("Create", expense);
+            TempData["SuccessMessage"] = "Paragon odczytany pomyślnie! Zweryfikuj kategorie i zapisz.";
+            return View("VerifyReceipt", viewModel); // Odsyłamy do nowego widoku!
+        }
+
+        // NOWA AKCJA ZAPISUJĄCA WIELE WYDATKÓW NA RAZ
+        [HttpPost]
+        public IActionResult SaveVerifiedReceipt(VerifyReceiptViewModel model)
+        {
+            var userId = _userManager.GetUserId(User);
+
+            if (model.ExpensesToSave != null && model.ExpensesToSave.Any())
+            {
+                foreach (var expense in model.ExpensesToSave)
+                {
+                    // Opcjonalne zabezpieczenie, żeby nie zapisywać wydatków z kwotą 0
+                    if (expense.Amount > 0)
+                    {
+                        _expenseService.AddExpense(expense, userId);
+                    }
+                }
+            }
+
+            TempData["SuccessMessage"] = "Podzielone wydatki zostały zapisane!";
+            return RedirectToAction("Index");
         }
     }
 }
