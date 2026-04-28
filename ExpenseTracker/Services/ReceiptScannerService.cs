@@ -88,35 +88,36 @@ namespace ExpenseTracker.Services
 
             string jsonList = JsonSerializer.Serialize(rawItems);
 
-            // Nowy prompt używający techniki "Chain of Thought"
+            // Dopracowany system prompt z obsługą wyjątków (z opustem lub bez)
             string systemPrompt = @"
-Jesteś zaawansowanym asystentem finansowym. Otrzymujesz dane OCR z polskiego paragonu (zachowana kolejność z wydruku).
+Jesteś asystentem finansowym. Otrzymujesz dane OCR z polskiego paragonu w kolejności czytania.
 
-ZASADY:
-1. Słowo 'OPUST' lub 'RABAT' oznacza zniżkę, która ZAWSZE dotyczy produktu znajdującego się na liście tuż przed nią.
-2. Twoim zadaniem jest odjęcie wartości opustu od ceny produktu (zignoruj fakt, czy opust ma znak minus czy plus, po prostu odejmij kwotę zniżki od kwoty produktu).
-3. Pomiń śmieci z OCR (dziwne losowe ciągi znaków).
+GENIALNA REGULA (Wariantowość zniżek):
+Sklep drukuje pozycje w dwóch wariantach. Twoim zadaniem jest sprawdzenie, co znajduje się bezpośrednio pod danym produktem:
 
-KATEGORIE DO WYBORU:
-Zakupy spożywcze (Nabiał, Mięso, Pieczywo, Warzywa, Owoce, Słodycze i Przekąski, Napoje, Produkty suche/sypkie, Tłuszcze, Dania Gotowe), Transport (Paliwo, Bilety, Serwis Auta), Media, Chemia (Środki czystości), Zdrowie, Kosmetyki, Inne.
+- WARIANT A (Produkt z OPUSTEM): 
+  1. Produkt (np. DZIK: 10.98) 
+  2. OPUST (np. OPUST: -5.50) 
+  3. Pozycja bez nazwy: 5.48
+  Reguła: Jeśli pod produktem widzisz słowo 'OPUST' lub 'RABAT', to RZECZYWISTĄ CENĄ produktu jest kwota znajdująca się w następnej linijce, tuż pod opustem (w tym przykładzie: 5.48). Całkowicie zignoruj kwotę pierwotną (10.98) oraz samą pozycję OPUST.
 
-Zwróć wynik BEZWZGLĘDNIE jako czysty JSON w następującym formacie (nie używaj ```json):
-{
-  ""Rozumowanie"": ""TUTAJ opisz krok po kroku swoje obliczenia. Np. '1. DZIK Napój: 10.98, pod nim opust 5.50. Wynik: 5.48. 2. Krem proteinowy: 8.99, opust 4.50. Wynik: 4.49...'"",
-  ""Wynik"": [
-    {
-      ""Category"": ""Zakupy spożywcze"",
-      ""SubCategory"": ""Napoje"",
-      ""Amount"": 5.48,
-      ""ItemNames"": [""DZIK Napój energ.""]
-    }
-  ]
-}";
+- WARIANT B (Produkt BEZ OPUSTU):
+  Reguła: Jeśli pod produktem NIE MA słowa 'OPUST' ani 'RABAT', oznacza to, że nie ma zniżki. Jego ostateczna cena to po prostu ta, która jest do niego przypisana.
+
+TWOJE ZADANIE:
+1. Przeanalizuj listę i znajdź właściwe ceny produktów, używając powyższych Wariantów A i B.
+2. Przypisz produkty do odpowiedniej kategorii: Zakupy spożywcze (Nabiał, Mięso, Pieczywo, Warzywa, Owoce, Słodycze i Przekąski, Napoje, Produkty suche/sypkie, Tłuszcze, Dania Gotowe), Transport, Media, Chemia, Zdrowie, Kosmetyki, Inne.
+3. Pogrupuj wyniki, zsumuj je i zapisz czyste nazwy w ItemNames. Zignoruj wszystkie pozycje typu 'OPUST', 'RABAT', 'Kaucja' oraz ciągi znaków niebędące produktami.
+
+Zwróć wynik BEZWZGLĘDNIE jako CZYSTĄ TABLICĘ JSON (nie dodawaj znaczników markdown np. ```json):
+[
+  { ""Category"": ""Zakupy spożywcze"", ""SubCategory"": ""Napoje"", ""Amount"": 5.48, ""ItemNames"": [""DZIK Napój energ.""] }
+]";
 
             var requestBody = new
             {
                 model = "gpt-4o-mini",
-                temperature = 0.0, // 0 oznacza maksymalną dokładność i brak kreatywności (wymagane przy matematyce)
+                temperature = 0.0, // Zostawiamy 0.0, żeby AI zachowywało się jak maszyna licząca, a nie poeta
                 messages = new[]
                 {
                     new { role = "system", content = systemPrompt },
@@ -136,17 +137,12 @@ Zwróć wynik BEZWZGLĘDNIE jako czysty JSON w następującym formacie (nie uży
                 var responseString = await response.Content.ReadAsStringAsync();
 
                 using var jsonDoc = JsonDocument.Parse(responseString);
-                string aiContent = jsonDoc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "{}";
+                string aiContent = jsonDoc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "[]";
 
                 aiContent = aiContent.Replace("```json", "").Replace("```", "").Trim();
 
-                // Dodano podgląd rozumowania w konsoli Visual Studio!
-                System.Diagnostics.Debug.WriteLine($"\n--- MYŚLENIE AI ---\n{aiContent}\n-------------------\n");
-
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
-                var result = JsonSerializer.Deserialize<OpenAiReceiptResponse>(aiContent, options);
-
-                return result?.Wynik; // Zwracamy tylko właściwą tablicę z wynikami
+                return JsonSerializer.Deserialize<List<SubCategorySummaryDto>>(aiContent, options);
             }
             catch (Exception ex)
             {
