@@ -3,6 +3,7 @@ using Azure.AI.FormRecognizer.DocumentAnalysis;
 using ExpenseTracker.Models;
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions; // Dodane dla odkurzacza Regex
 
 namespace ExpenseTracker.Services
 {
@@ -23,11 +24,14 @@ namespace ExpenseTracker.Services
 
         public async Task<ScannedReceiptDto?> ScanReceiptAsync(Stream imageStream)
         {
-            //czysty ocr
+            // --- 1. ETAP: AZURE (Nasz własny wytrenowany model Neural) ---
             var credential = new AzureKeyCredential(_azureApiKey);
             var client = new DocumentAnalysisClient(new Uri(_azureEndpoint), credential);
 
-            AnalyzeDocumentOperation operation = await client.AnalyzeDocumentAsync(WaitUntil.Completed, "prebuilt-receipt", imageStream);
+            // TUTAJ WPISZ ID SWOJEGO MODELU Z AZURE STUDIO (Zamiast ModelParagony)
+            string myCustomModelId = "ModelParagony";
+
+            AnalyzeDocumentOperation operation = await client.AnalyzeDocumentAsync(WaitUntil.Completed, myCustomModelId, imageStream);
             AnalyzedDocument? receipt = operation.Value.Documents.FirstOrDefault();
 
             if (receipt == null) return null;
@@ -35,21 +39,44 @@ namespace ExpenseTracker.Services
             var dto = new ScannedReceiptDto
             {
                 MerchantName = GetFieldValue(receipt, "MerchantName") ?? "Nieznany sklep",
-                TotalAmount = GetDecimalValue(receipt, "Total"),
-                TransactionDate = GetDateValue(receipt, "TransactionDate") ?? DateTime.Today
+                // Zabezpieczony pobór sumy
+                TotalAmount = GetDecimalValue(receipt, "TotalAmount"),
+                TransactionDate = DateTime.Today // Możesz dodać datę do modelu w przyszłości
             };
 
-            // Pobieram cały tekst
-            string rawReceiptText = operation.Value.Content;
+            // --- 2. ETAP: Wyciągnięcie CZYSTYCH DANYCH z naszej tabeli i Matematyka (C#) ---
+            var rawItems = new List<RawReceiptItem>();
 
-            // analliza, dedukcja, kategoryzacja
-            if (!string.IsNullOrWhiteSpace(rawReceiptText))
+            if (receipt.Fields.TryGetValue("Items", out DocumentField? itemsField) && itemsField.FieldType == DocumentFieldType.List)
             {
-                var processedCategories = await ProcessReceiptWithOpenAIAsync(rawReceiptText);
+                foreach (var itemField in itemsField.Value.AsList())
+                {
+                    var itemDict = itemField.Value.AsDictionary();
+
+                    string name = GetDictionaryStringValue(itemDict, "Name") ?? "Nieznany produkt";
+
+                    // Używamy naszego bezpiecznego odkurzacza do wyciągania kwot z literek
+                    decimal basePrice = GetDictionaryDecimalValue(itemDict, "BasePrice") ?? 0m;
+                    decimal discount = GetDictionaryDecimalValue(itemDict, "Discount") ?? 0m;
+
+                    // Ostateczna matematyka po stronie programu!
+                    decimal finalPrice = basePrice + discount;
+
+                    if (finalPrice != 0 && name != "Nieznany produkt")
+                    {
+                        rawItems.Add(new RawReceiptItem { Name = name, Price = finalPrice });
+                    }
+                }
+            }
+
+            // --- 3. ETAP: OPENAI (Wyłącznie Kategoryzacja gotowych danych) ---
+            if (rawItems.Any())
+            {
+                var processedCategories = await ProcessReceiptWithOpenAIAsync(rawItems);
 
                 if (processedCategories != null)
                 {
-                    //ostateczne grupowanie
+                    // --- 4. ETAP: POST-PROCESSING (Grupowanie ostateczne) ---
                     var groupedCategories = new List<SubCategorySummaryDto>();
 
                     foreach (var item in processedCategories)
@@ -85,34 +112,33 @@ namespace ExpenseTracker.Services
             return dto;
         }
 
-        // Klasa pomocnicza do mapowania odpowiedzi AI z polem "Rozumowanie"
+        // Klasy pomocnicze
+        private class RawReceiptItem
+        {
+            public string Name { get; set; }
+            public decimal Price { get; set; }
+        }
+
         private class OpenAiReceiptResponse
         {
             public string Rozumowanie { get; set; }
             public List<SubCategorySummaryDto> Wynik { get; set; }
         }
 
-        private async Task<List<SubCategorySummaryDto>?> ProcessReceiptWithOpenAIAsync(string rawText)
+        private async Task<List<SubCategorySummaryDto>?> ProcessReceiptWithOpenAIAsync(List<RawReceiptItem> rawItems)
         {
             if (string.IsNullOrEmpty(_openAiApiKey)) return null;
 
-            System.Diagnostics.Debug.WriteLine("\n=== SUROWY TEKST WYSŁANY DO AI ===");
-            System.Diagnostics.Debug.WriteLine(rawText);
+            string jsonList = JsonSerializer.Serialize(rawItems);
+            System.Diagnostics.Debug.WriteLine("\n=== CZYSTA LISTA DO AI ===");
+            System.Diagnostics.Debug.WriteLine(jsonList);
 
+            // Zmniejszony prompt - OpenAI dostaje gotowe ceny, musi je tylko ułożyć w szufladki
             string systemPrompt = @"
-Jesteś wybitnym detektywem finansowym. Otrzymujesz surowy tekst z polskiego paragonu zrzucony przez OCR.
-
-BŁĘDY SKANERA (BARDZO WAŻNE):
-Tekst z OCR jest poszarpany, a ceny bardzo często są PRZESUNIĘTE W DÓŁ o 1 lub 2 pozycje względem nazwy produktu! 
-Zauważ logikę np.:
-- Jeśli pod 'Winogrona' widzisz '1 x 3,99', to to NIE jest cena winogron (winogrona są na wagę!). To zgubiona cena produktu wyżej (np. Syropu).
-- Cena winogron ('0,216 x 19,99 = 4,32') znajduje się pewnie jeszcze niżej, np. przy słowie 'Podsuma'.
-Kieruj się logiką (mnożniki, wagi, odliczenia opustów), a nie tylko bliskością tekstu.
+Jesteś asystentem finansowym. Otrzymujesz czystą listę produktów wraz z ich ostatecznymi cenami, przygotowaną przez program.
 
 TWOJE ZADANIE:
-1. Zidentyfikuj WSZYSTKIE produkty (nie pomiń niczego).
-2. Dopasuj do nich właściwe ceny bazowe i uwzględnij opusty leżące pod nimi.
-3. Przypisz produkty do kategorii: 
+1. Przypisz KAŻDY otrzymany produkt do jednej z kategorii i podkategorii:
 ""Zakupy spożywcze"": [""Mięso"", ""Nabiał"", ""Pieczywo"", ""Warzywa"",""Owoce"",""Słodycze i Przekąski"", ""Napoje"", ""Napoje energetyczne"", ""artykuły suche"", ""Tłuszcze"",""Sosy i Syropy"",""Przyprawy i Słodziki"", ""Dania Gotowe""],
 ""Transport"": [""Paliwo"", ""Bilety Komunikacji Miejskiej"", ""Taksówki/Uber"", ""Serwis Auta"", ""Ubezpieczenie Auta"", ""Przegląd"", ""Bilety lotnicze"", ""Bilety PKP"", ""Nocleg""],
 ""Media"": [""Czynsz"", ""Prąd"", ""Internet"", ""Woda"", ""Gaz"", ""Telefon""],
@@ -120,13 +146,13 @@ TWOJE ZADANIE:
 ""Rozrywka"": [""Gry"", ""Serwisy Streamingowe"", ""Wyjścia""],
 ""Zdrowie"": [""Lekarze"", ""Leki"", ""Suplementy"", ""Sport""],
 ""Kosmetyki"": [""Do Twarzy"", ""Do Ciała"", ""Do Włosów"", ""Makijaż""],
-""Inne"": []
+""Inne"": [""Karma dla zwierząt""]
 
 Zwróć wynik BEZWZGLĘDNIE jako obiekt JSON (bez znaczników ```json) ze strukturą:
 {
-  ""Rozumowanie"": ""Tutaj krok po kroku napisz, jak połączyłeś ceny z produktami, np. Syrop to 3.99, a winogrona to 4.32."",
+  ""Rozumowanie"": ""Krótko potwierdź przypisanie kategorii."",
   ""Wynik"": [
-    { ""Category"": ""Zakupy spożywcze"", ""SubCategory"": ""Sosy i Syropy"", ""Amount"": 3.99, ""ItemNames"": [""Syrop ZERO CUKRU""] }
+    { ""Category"": ""Zakupy spożywcze"", ""SubCategory"": ""Mięso"", ""Amount"": 28.32, ""ItemNames"": [""Filet z kurczaka""] }
   ]
 }";
 
@@ -137,7 +163,7 @@ Zwróć wynik BEZWZGLĘDNIE jako obiekt JSON (bez znaczników ```json) ze strukt
                 messages = new[]
                 {
                     new { role = "system", content = systemPrompt },
-                    new { role = "user", content = rawText }
+                    new { role = "user", content = jsonList }
                 }
             };
 
@@ -151,15 +177,10 @@ Zwróć wynik BEZWZGLĘDNIE jako obiekt JSON (bez znaczników ```json) ze strukt
                 if (!response.IsSuccessStatusCode) return null;
 
                 var responseString = await response.Content.ReadAsStringAsync();
-
                 using var jsonDoc = JsonDocument.Parse(responseString);
                 string aiContent = jsonDoc.RootElement.GetProperty("choices")[0].GetProperty("message").GetProperty("content").GetString() ?? "{}";
 
-                System.Diagnostics.Debug.WriteLine("\n=== CO ZWRÓCIŁO AI ===");
-                System.Diagnostics.Debug.WriteLine(aiContent);
-
                 aiContent = aiContent.Replace("```json", "").Replace("```", "").Trim();
-
                 var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var responseObj = JsonSerializer.Deserialize<OpenAiReceiptResponse>(aiContent, options);
 
@@ -167,12 +188,12 @@ Zwróć wynik BEZWZGLĘDNIE jako obiekt JSON (bez znaczników ```json) ze strukt
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Błąd C#: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Błąd AI: {ex.Message}");
                 return null;
             }
         }
 
-        // --- Metody pomocnicze ---
+        // --- Metody pomocnicze (Pola luźne np. MerchantName, TotalAmount) ---
         private string? GetFieldValue(AnalyzedDocument doc, string fieldName)
         {
             if (doc.Fields.TryGetValue(fieldName, out DocumentField? field) && field.FieldType == DocumentFieldType.String)
@@ -182,15 +203,44 @@ Zwróć wynik BEZWZGLĘDNIE jako obiekt JSON (bez znaczników ```json) ze strukt
 
         private decimal? GetDecimalValue(AnalyzedDocument doc, string fieldName)
         {
-            if (doc.Fields.TryGetValue(fieldName, out DocumentField? field) && field.FieldType == DocumentFieldType.Double)
-                return (decimal)field.Value.AsDouble();
+            if (doc.Fields.TryGetValue(fieldName, out DocumentField? field))
+            {
+                if (field.FieldType == DocumentFieldType.Double) return (decimal)field.Value.AsDouble();
+                if (field.FieldType == DocumentFieldType.String) return CleanAndParseDecimal(field.Value.AsString());
+            }
             return null;
         }
 
-        private DateTime? GetDateValue(AnalyzedDocument doc, string fieldName)
+        // --- Metody pomocnicze (Słownik wewnątrz tabeli np. Name, BasePrice) ---
+        private string? GetDictionaryStringValue(IReadOnlyDictionary<string, DocumentField> dict, string key)
         {
-            if (doc.Fields.TryGetValue(fieldName, out DocumentField? field) && field.FieldType == DocumentFieldType.Date)
-                return field.Value.AsDate().DateTime;
+            if (dict.TryGetValue(key, out DocumentField? field) && field.FieldType == DocumentFieldType.String)
+                return field.Value.AsString();
+            return null;
+        }
+
+        private decimal? GetDictionaryDecimalValue(IReadOnlyDictionary<string, DocumentField> dict, string key)
+        {
+            if (dict.TryGetValue(key, out DocumentField? field))
+            {
+                if (field.FieldType == DocumentFieldType.Double) return (decimal)field.Value.AsDouble();
+                if (field.FieldType == DocumentFieldType.String) return CleanAndParseDecimal(field.Value.AsString());
+            }
+            return null;
+        }
+
+        // --- Super bezpieczny odkurzacz dla kwot ---
+        private decimal? CleanAndParseDecimal(string rawText)
+        {
+            if (string.IsNullOrWhiteSpace(rawText)) return null;
+
+            // Zostawia tylko cyfry, minus i kropkę/przecinek
+            string cleanedText = Regex.Replace(rawText, "[^0-9.,-]", "").Replace(",", ".");
+
+            if (decimal.TryParse(cleanedText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal result))
+            {
+                return result;
+            }
             return null;
         }
     }
