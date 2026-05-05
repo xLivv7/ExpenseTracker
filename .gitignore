@@ -361,3 +361,9 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Baza danych SQLite i jej pliki tymczasowe
+*.db
+*.db-shm
+*.db-wal
+expenseTracker.db
