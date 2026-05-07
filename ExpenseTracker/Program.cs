@@ -45,17 +45,22 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
-try
+using (var scope = app.Services.CreateScope())
 {
-    using (var scope = app.Services.CreateScope())
+    var services = scope.ServiceProvider;
+    try
     {
-        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var dbContext = services.GetRequiredService<ApplicationDbContext>();
+        //Czeka aż baza się 'obudzi;
+        dbContext.Database.SetCommandTimeout(60);
         dbContext.Database.Migrate();
     }
-}
-catch (Exception ex)
-{
-    Console.WriteLine($"KRYTYCZNY BŁĄD BAZY: {ex.Message}");
+    catch (Exception ex)
+    {
+        //Jeśli będzie błąd to strona wstanie a błąd będzie w logach
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "Problem z migracją bazy danych przy starcie.");
+    }
 }
 
 app.Run();
