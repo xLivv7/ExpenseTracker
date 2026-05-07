@@ -13,7 +13,7 @@
             <form asp-action="UploadReceipt" method="post" enctype="multipart/form-data" id="uploadForm">
                 <div class="mb-3">
                     <label class="form-label">Wybierz zdjęcie lub zrób je aparatem:</label>
-                    <input type="file" name="receiptFile" class="form-control" accept="image/*" capture="environment" required id="fileInput" />
+                    <input type="file" name="receiptFile" class="form-control" accept="image/*, application/pdf, .pdf" required id="fileInput" />
                 </div>
 
                 <button type="submit" class="btn btn-primary w-100" id="submitBtn">
