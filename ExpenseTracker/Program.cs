@@ -45,11 +45,17 @@ app.MapControllerRoute(
 
 app.MapRazorPages();
 
-// Tworzenie/Aktualizacja bazy przy starcie aplikacji
-using (var scope = app.Services.CreateScope())
+try
 {
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate();
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        dbContext.Database.Migrate();
+    }
+}
+catch (Exception ex)
+{
+    Console.WriteLine($"KRYTYCZNY BŁĄD BAZY: {ex.Message}");
 }
 
 app.Run();
