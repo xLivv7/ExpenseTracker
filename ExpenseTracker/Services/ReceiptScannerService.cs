@@ -139,14 +139,21 @@ Jesteś asystentem finansowym. Otrzymujesz czystą listę produktów wraz z ich 
 
 TWOJE ZADANIE:
 1. Przypisz KAŻDY otrzymany produkt do jednej z kategorii i podkategorii:
-""Zakupy spożywcze"": [""Mięso"", ""Nabiał"", ""Pieczywo"", ""Warzywa"",""Owoce"",""Słodycze i Przekąski"", ""Napoje"", ""Napoje energetyczne"", ""artykuły suche"", ""Tłuszcze"",""Sosy i Syropy"",""Przyprawy i Słodziki"", ""Dania Gotowe""],
-""Transport"": [""Paliwo"", ""Bilety Komunikacji Miejskiej"", ""Taksówki/Uber"", ""Serwis Auta"", ""Ubezpieczenie Auta"", ""Przegląd"", ""Bilety lotnicze"", ""Bilety PKP"", ""Nocleg""],
-""Media"": [""Czynsz"", ""Prąd"", ""Internet"", ""Woda"", ""Gaz"", ""Telefon""],
-""Chemia"": [""Środki czystości""],
-""Rozrywka"": [""Gry"", ""Serwisy Streamingowe"", ""Wyjścia""],
-""Zdrowie"": [""Lekarze"", ""Leki"", ""Suplementy"", ""Sport""],
-""Kosmetyki"": [""Do Twarzy"", ""Do Ciała"", ""Do Włosów"", ""Makijaż""],
-""Inne"": [""Karma dla zwierząt""]
+                    ""Zakupy spożywcze"": [""Mięso i Ryby"", ""Nabiał i Jaja"", ""Pieczywo"", ""Warzywa"", ""Owoce"", ""Słodycze i Przekąski"", ""Napoje"", ""Sosy i Syropy"", ""Przyprawy i Słodziki"", ""Napoje energetyczne"", ""Artykuły suche (Mąka, Makaron, Ryż)"", ""Tłuszcze"", ""Konserwy i Słoiki"", ""Kremy i Smarowidła"", ""Dania Gotowe i Garmażerka"", ""Mrożonki"", ""Alkohol"", ""Wyroby tytoniowe"", ""Gotowe lunche i kanapki"", ""Inne""],
+                    ""Transport"": [""Paliwo"", ""Bilety Komunikacji Miejskiej"", ""Taksówki/Uber/Bolt"", ""Serwis i Części Auta"", ""Ubezpieczenie Auta"", ""Przegląd techniczny"", ""Bilety lotnicze"", ""Bilety PKP/Autobusowe"", ""Parkingi"", ""Myjnia"", ""Eksploatacja (Płyny, Wycieraczki)"", ""Inne""],
+                    ""Dom i Ogród"": [""Meble i Wyposażenie"", ""Dekoracje"", ""AGD i RTV"", ""Remonty i Narzędzia"", ""Ogród i Rośliny"", ""Tekstylia domowe (Pościel, Ręczniki)"", ""Inne""],
+                    ""Media i Subskrypcje"": [""Czynsz"", ""Prąd"", ""Internet"", ""Woda i ścieki"", ""Gaz"", ""Telefon"", ""Subskrypcje Cyfrowe (Streaming, Cloud)"", ""Abonamenty TV"", ""Inne""],
+                    ""Chemia i Higiena"": [""Środki czystości (Dom)"", ""Pranie i Płukanie"", ""Artykuły higieniczne (Papier, Podpaski)"", ""Akcesoria do sprzątania"", ""Inne""],
+                    ""Rozrywka i Gastronomia"": [""Gry i Oprogramowanie"", ""Wyjścia (Kino, Teatr, Koncerty)"", ""Restauracje i Puby"", ""Kawiarnie i Piekarnie (na miejscu)"", ""Hobby i Pasje"", ""Inne""],
+                    ""Zdrowie"": [""Lekarze i Specjaliści"", ""Leki i Apteka"", ""Suplementy diety"", ""Sport i Siłownia"", ""Stomatologia"", ""Okulista i Optyk"", ""Badania laboratoryjne"", ""Inne""],
+                    ""Kosmetyki"": [""Do Twarzy"", ""Do Ciała"", ""Do Włosów"", ""Makijaż"", ""Perfumy"", ""Higiena i Akcesoria kosmetyczne""],
+                    ""Ubrania i Dodatki"": [""Buty"", ""Odzież"", ""Bielizna"", ""Akcesoria (Paski, Torebki)"", ""Biżuteria i Zegarki""],
+                    ""Zwierzęta"": [""Karma dla zwierząt"", ""Weterynarz i Leki"", ""Akcesoria i Zabawki"", ""Usługi (Fryzjer, Hotel)""],
+                    ""Edukacja i Rozwój"": [""Książki i E-booki"", ""Kursy i Szkolenia"", ""Nauka języków"", ""Artykuły biurowe i papiernicze"", ""Inne""],
+                    ""Podróże"": [""Nocleg i Hotele"", ""Atrakcje i Bilety wstępu"", ""Wycieczki zorganizowane"", ""Opłaty turystyczne""],
+                    ""Prezenty i Pomoc"": [""Prezenty dla bliskich"", ""Kwiaty"", ""Darowizny i Fundacje"", ""Inne""],
+                    ""Finanse"": [""Opłaty i Prowizje bankowe"", ""Raty kredytów i pożyczek"", ""Ubezpieczenia na życie"", ""Inwestycje i Oszczędności""],
+                    ""Inne"": [""Usługi pocztowe i kurierskie"", ""Opłaty urzędowe"", ""Inne nieprzypisane""]
 
 Zwróć wynik BEZWZGLĘDNIE jako obiekt JSON (bez znaczników ```json) ze strukturą:
 {
