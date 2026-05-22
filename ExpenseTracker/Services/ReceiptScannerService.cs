@@ -31,7 +31,8 @@ namespace ExpenseTracker.Services
             // TUTAJ WPISZ ID SWOJEGO MODELU Z AZURE STUDIO (Zamiast ModelParagony)
             string myCustomModelId = "ModelParagony";
 
-            AnalyzeDocumentOperation operation = await client.AnalyzeDocumentAsync(WaitUntil.Completed, myCustomModelId, imageStream);
+            var options = new AnalyzeDocumentOptions { Locale = "pl-PL" };
+            AnalyzeDocumentOperation operation = await client.AnalyzeDocumentAsync(WaitUntil.Completed, myCustomModelId, imageStream, options);
             AnalyzedDocument? receipt = operation.Value.Documents.FirstOrDefault();
 
             if (receipt == null) return null;
@@ -59,8 +60,8 @@ namespace ExpenseTracker.Services
                     decimal basePrice = GetDictionaryDecimalValue(itemDict, "BasePrice") ?? 0m;
                     decimal discount = GetDictionaryDecimalValue(itemDict, "Discount") ?? 0m;
 
-                    // Ostateczna matematyka po stronie programu!
-                    decimal finalPrice = basePrice + discount;
+                    // Ostateczna matematyka 
+                    decimal finalPrice = basePrice - Math.Abs(discount);
 
                     if (finalPrice != 0 && name != "Nieznany produkt")
                     {
@@ -212,8 +213,18 @@ Zwróć wynik BEZWZGLĘDNIE jako obiekt JSON (bez znaczników ```json) ze strukt
         {
             if (doc.Fields.TryGetValue(fieldName, out DocumentField? field))
             {
-                if (field.FieldType == DocumentFieldType.Double) return (decimal)field.Value.AsDouble();
-                if (field.FieldType == DocumentFieldType.String) return CleanAndParseDecimal(field.Value.AsString());
+                // Ignorujemy AsDouble(). Bierzemy Content (czysty tekst z OCR) i odpalamy odkurzacz.
+                return CleanAndParseDecimal(field.Content);
+            }
+            return null;
+        }
+
+        private decimal? GetDictionaryDecimalValue(IReadOnlyDictionary<string, DocumentField> dict, string key)
+        {
+            if (dict.TryGetValue(key, out DocumentField? field))
+            {
+                // Analogicznie, używamy Content zamiast AsDouble()
+                return CleanAndParseDecimal(field.Content);
             }
             return null;
         }
@@ -226,25 +237,37 @@ Zwróć wynik BEZWZGLĘDNIE jako obiekt JSON (bez znaczników ```json) ze strukt
             return null;
         }
 
-        private decimal? GetDictionaryDecimalValue(IReadOnlyDictionary<string, DocumentField> dict, string key)
-        {
-            if (dict.TryGetValue(key, out DocumentField? field))
-            {
-                if (field.FieldType == DocumentFieldType.Double) return (decimal)field.Value.AsDouble();
-                if (field.FieldType == DocumentFieldType.String) return CleanAndParseDecimal(field.Value.AsString());
-            }
-            return null;
-        }
-
-        // --- Super bezpieczny odkurzacz dla kwot ---
+        // odkurzacz dla kwot pl
         private decimal? CleanAndParseDecimal(string rawText)
         {
             if (string.IsNullOrWhiteSpace(rawText)) return null;
 
-            // Zostawia tylko cyfry, minus i kropkę/przecinek
-            string cleanedText = Regex.Replace(rawText, "[^0-9.,-]", "").Replace(",", ".");
+            //Zostawiamy TYLKO cyfry, kropki i przecinki (usuwamy minusy, spacje, 'zł', 'PLN')
+            string cleaned = Regex.Replace(rawText, "[^0-9.,]", "");
 
-            if (decimal.TryParse(cleanedText, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal result))
+            //Obsługa sytuacji, gdy na paragonie jest np. "1.234,56" lub błąd OCR: "1,234.56"
+            if (cleaned.Contains('.') && cleaned.Contains(','))
+            {
+                int dotIndex = cleaned.LastIndexOf('.');
+                int commaIndex = cleaned.LastIndexOf(',');
+
+                if (commaIndex > dotIndex) // np. 1.234,56 (polski format z tysiącami)
+                {
+                    cleaned = cleaned.Replace(".", "").Replace(",", ".");
+                }
+                else // np. 1,234.56 (amerykański format z tysiącami)
+                {
+                    cleaned = cleaned.Replace(",", "");
+                }
+            }
+            else
+            {
+                // Mamy tylko jeden rodzaj separatora - po prostu zamieniamy przecinek na kropkę
+                cleaned = cleaned.Replace(",", ".");
+            }
+
+            //Parsowanie (InvariantCulture oczekuje kropki)
+            if (decimal.TryParse(cleaned, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out decimal result))
             {
                 return result;
             }
